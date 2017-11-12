@@ -49,13 +49,12 @@ class ImageData(object):
         return image_qt
     #
 
-
 class DrawerInterface(DrawInterfaceInitial):
     "Final façade of the drawer"""
     # Constructor
     def __init__(self):
         super().__init__()
-    #
+        #
         #
         # ---- Main Window Events ---------
         #
@@ -70,7 +69,7 @@ class DrawerInterface(DrawInterfaceInitial):
         # ---- Image Operations -----------
         #
         self.graphicsScene = QtWidgets.QGraphicsScene()
-        self.graphicsScene.mouseDoubleClickEvent = self.select_pixel
+        self.graphicsScene.mousePressEvent = self.select_pixel
         self.raw_image = ImageData()
         self.pixmap_image = QtGui.QPixmap()
         self.draw_mode = False
@@ -79,7 +78,6 @@ class DrawerInterface(DrawInterfaceInitial):
         # ---- File Directory -------------
         #
         self.image_dict = {} # Stores the images initiated as ImageData
-        #
         #
         # Buttons
         #
@@ -188,30 +186,47 @@ class DrawerInterface(DrawInterfaceInitial):
         #
         return
         #
-    #
+        #
+        #
     def select_pixel(self, click_event):
         """Select a point in scene item and get its coordinates"""
         # TODO buna bak
         #
-        self.pixel_coordinates.append(click_event.pos())
+        add_position = click_event.pos()
+        self.pixel_coordinates.append(add_position)
         if not self.draw_mode == True:
             self.graphicsScene.clear()
             return
+        self.draw_polygons()
         #
+        return
+    #
+    def draw_polygons(self):
+        """Draw the polygons based on the coordinates"""
+        # TODO Noktayı gördüm gerisi daha yok.
+        color = QtGui.QColor("cyan")
+        #painterClass.setPen(color)
+        draw_pen = QtGui.QPen()
+        draw_pen.setColor(color)
+        draw_pen.setWidth(400)
+        print("COLOR SET!\n")
         if len(self.pixel_coordinates) < 4:
-            self.statusbar.showMessage("Please select at least 4 points")
             return
-            #
-        pen = QtGui.QPen(QtCore.Qt.red)
-        self.graphicsScene.addPolygon(QtGui.QPolygonF(self.pixel_coordinates),
-                                      pen)
-        line_points = itertools.combinations(self.pixel_coordinates, 2)
-        # line_points == [((x_1,y_1),(x_2,y_2)),((x_1,y_1),(x_3,y_3))]
-        for points in line_points:
-            point1 = points[0]
-            point2 = points[1]
-            self.graphicsScene.addLine(point1,
-                                       point2, pen)
+        #
+        polygon_points = [(self.pixel_coordinates[i],
+                           self.pixel_coordinates[i+1]) for i in range(len(
+                               self.pixel_coordinates)) if i+1 < len(
+                                   self.pixel_coordinates)]
+        print("POLYGON Points!\n")
+        #
+        polygon_points.append((self.pixel_coordinates[-1],
+                              self.pixel_coordinates[0]))
+        #
+        for point_tuple in polygon_points:
+            print("POLYGON DRAW!\n")
+            line = QtCore.QLineF(point_tuple[0], point_tuple[1])
+            self.graphicsScene.addLine(line, draw_pen)
+            #painterClass.drawLine(line)
         #
         return
 
@@ -219,6 +234,7 @@ class DrawerInterface(DrawInterfaceInitial):
         """Switch draw mode on or off"""
         if self.draw_mode == True:
             self.draw_mode = False
+            self.statusbar.showMessage("Draw Mode off")
         else:
             self.draw_mode = True
             self.statusbar.showMessage("Draw Mode On!")
